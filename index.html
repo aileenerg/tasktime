@@ -1,0 +1,785 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f7f8f3">
+  <title>TaskTime</title>
+
+  <style>
+    :root {
+      --green: #718b72;
+      --dark-green: #405b45;
+      --light-green: #e8eee5;
+      --cream: #f7f8f3;
+      --white: #ffffff;
+      --text: #303a32;
+      --muted: #818a80;
+      --border: #e5e9e1;
+      --red: #b96860;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--cream);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+    }
+
+    header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 7%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 25px;
+      font-weight: bold;
+      color: var(--dark-green);
+    }
+
+    .logo span {
+      color: var(--green);
+    }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 35px auto;
+      padding: 0 20px;
+    }
+
+    .welcome {
+      margin-bottom: 25px;
+    }
+
+    h1 {
+      font-size: 30px;
+      margin-bottom: 8px;
+    }
+
+    .welcome p {
+      color: var(--muted);
+      margin-top: 0;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+    }
+
+    .stat-card p {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0 0 10px;
+    }
+
+    .stat-card h2 {
+      margin: 0;
+      font-size: 27px;
+      color: var(--dark-green);
+    }
+
+    .panel {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 22px;
+    }
+
+    .panel h2 {
+      font-size: 19px;
+      margin: 0 0 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+
+    label {
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-size: 14px;
+      background: var(--cream);
+      color: var(--text);
+    }
+
+    input:focus {
+      outline: 2px solid var(--light-green);
+      border-color: var(--green);
+    }
+
+    button {
+      border: none;
+      border-radius: 9px;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+
+    button:hover {
+      opacity: 0.85;
+    }
+
+    .primary {
+      background: var(--green);
+      color: white;
+    }
+
+    .secondary {
+      background: var(--light-green);
+      color: var(--dark-green);
+    }
+
+    .danger {
+      background: #f6e9e7;
+      color: var(--red);
+    }
+
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: var(--cream);
+      color: var(--muted);
+      padding: 8px 12px;
+    }
+
+    .filter-btn.active {
+      background: var(--light-green);
+      color: var(--dark-green);
+    }
+
+    .task {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 17px;
+      margin-bottom: 12px;
+    }
+
+    .task-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .task-title {
+      font-size: 16px;
+      font-weight: bold;
+      overflow-wrap: anywhere;
+    }
+
+    .task.completed .task-title {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    .task-details {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      margin: 12px 0;
+    }
+
+    .timer {
+      font-size: 23px;
+      font-weight: bold;
+      color: var(--dark-green);
+      margin: 12px 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 35px 10px;
+      color: var(--muted);
+    }
+
+    .empty strong {
+      display: block;
+      color: var(--dark-green);
+      margin-bottom: 8px;
+      font-size: 17px;
+    }
+
+    .comparison {
+      background: var(--light-green);
+      border-radius: 8px;
+      padding: 10px;
+      margin: 12px 0;
+      color: var(--dark-green);
+      font-size: 13px;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 20px;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        padding: 17px 20px;
+      }
+
+      .tagline {
+        display: none;
+      }
+
+      main {
+        margin-top: 25px;
+      }
+
+      h1 {
+        font-size: 25px;
+      }
+
+      .stats {
+        gap: 8px;
+      }
+
+      .stat-card {
+        padding: 13px 10px;
+      }
+
+      .stat-card h2 {
+        font-size: 21px;
+      }
+
+      .stat-card p {
+        font-size: 11px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+
+      .panel {
+        padding: 17px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">Task<span>Time</span></div>
+  <div class="tagline">Make time for what matters.</div>
+</header>
+
+<main>
+
+  <section class="welcome">
+    <h1>My tasks</h1>
+    <p>Plan your time. Set your priorities. Get things done.</p>
+  </section>
+
+  <section class="stats">
+    <div class="stat-card">
+      <p>Total tasks</p>
+      <h2 id="totalTasks">0</h2>
+    </div>
+
+    <div class="stat-card">
+      <p>Completed</p>
+      <h2 id="completedTasks">0</h2>
+    </div>
+
+    <div class="stat-card">
+      <p>Time tracked</p>
+      <h2 id="totalTime">0m</h2>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>+ Add a new task</h2>
+
+    <form id="taskForm">
+      <div class="form-grid">
+        <div class="field">
+          <label for="taskName">What do you need to do?</label>
+          <input
+            id="taskName"
+            type="text"
+            placeholder="Example: Finish calculus homework"
+            maxlength="100"
+            required
+          >
+        </div>
+
+        <div class="field">
+          <label for="estimate">Estimated time (minutes)</label>
+          <input
+            id="estimate"
+            type="number"
+            min="1"
+            max="100000"
+            placeholder="30"
+            required
+          >
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="deadline">Deadline</label>
+        <input id="deadline" type="datetime-local">
+      </div>
+
+      <button class="primary" type="submit">
+        Add task
+      </button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <div class="task-header">
+      <h2>My to-do list</h2>
+
+      <div class="filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="active">Active</button>
+        <button class="filter-btn" data-filter="completed">Completed</button>
+      </div>
+    </div>
+
+    <div id="taskList"></div>
+  </section>
+
+</main>
+
+<footer>
+  TaskTime · Your time, your priorities.
+</footer>
+
+<script>
+  const STORAGE_KEY = "tasktime_tasks_v1";
+
+  let tasks = loadTasks();
+  let currentFilter = "all";
+
+  function loadTasks() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      const parsed = saved ? JSON.parse(saved) : [];
+
+      if (!Array.isArray(parsed)) return [];
+
+      return parsed.filter(task =>
+        task &&
+        typeof task.id === "string" &&
+        typeof task.name === "string" &&
+        Number.isFinite(task.estimate) &&
+        Number.isFinite(task.elapsed)
+      );
+    } catch (error) {
+      console.error("Could not load saved tasks:", error);
+      return [];
+    }
+  }
+
+  function saveTasks() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    } catch (error) {
+      alert("Your browser could not save the tasks. Check your browser storage settings.");
+    }
+  }
+
+  function getElapsed(task) {
+    let seconds = task.elapsed || 0;
+
+    if (task.running && task.startedAt) {
+      seconds += Math.max(0, (Date.now() - task.startedAt) / 1000);
+    }
+
+    return Math.floor(seconds);
+  }
+
+  function formatTime(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${secs}s`;
+    }
+
+    if (minutes > 0) {
+      return `${minutes}m ${secs}s`;
+    }
+
+    return `${secs}s`;
+  }
+
+  function formatMinutes(seconds) {
+    const minutes = seconds / 60;
+
+    if (minutes >= 60) {
+      return `${(minutes / 60).toFixed(1)} hours`;
+    }
+
+    return `${minutes.toFixed(1)} minutes`;
+  }
+
+  function makeElement(tag, className, content) {
+    const element = document.createElement(tag);
+
+    if (className) element.className = className;
+    if (content !== undefined) element.textContent = content;
+
+    return element;
+  }
+
+  function addButton(text, className, action) {
+    const button = makeElement("button", className, text);
+    button.type = "button";
+    button.addEventListener("click", action);
+    return button;
+  }
+
+  document.getElementById("taskForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const name = document.getElementById("taskName").value.trim();
+    const estimate = Number(document.getElementById("estimate").value);
+    const deadline = document.getElementById("deadline").value;
+
+    if (!name || !Number.isSafeInteger(estimate) || estimate < 1) {
+      alert("Please enter a task and a valid estimated time.");
+      return;
+    }
+
+    const task = {
+      id: crypto.randomUUID
+        ? crypto.randomUUID()
+        : String(Date.now()) + Math.random(),
+      name,
+      estimate,
+      deadline,
+      elapsed: 0,
+      startedAt: null,
+      running: false,
+      completed: false
+    };
+
+    tasks.unshift(task);
+    saveTasks();
+
+    this.reset();
+    render();
+  });
+
+  function startTimer(id) {
+    const task = tasks.find(item => item.id === id);
+    if (!task || task.completed) return;
+
+    // Only one timer can run at a time.
+    tasks.forEach(item => {
+      if (item.running) {
+        item.elapsed = getElapsed(item);
+        item.running = false;
+        item.startedAt = null;
+      }
+    });
+
+    task.running = true;
+    task.startedAt = Date.now();
+
+    saveTasks();
+    render();
+  }
+
+  function pauseTimer(id) {
+    const task = tasks.find(item => item.id === id);
+    if (!task || !task.running) return;
+
+    task.elapsed = getElapsed(task);
+    task.running = false;
+    task.startedAt = null;
+
+    saveTasks();
+    render();
+  }
+
+  function resetTimer(id) {
+    const task = tasks.find(item => item.id === id);
+    if (!task) return;
+
+    if (!confirm("Reset the tracked time for this task?")) return;
+
+    task.elapsed = 0;
+    task.running = false;
+    task.startedAt = null;
+
+    saveTasks();
+    render();
+  }
+
+  function completeTask(id) {
+    const task = tasks.find(item => item.id === id);
+    if (!task) return;
+
+    if (!task.completed) {
+      if (task.running) {
+        task.elapsed = getElapsed(task);
+        task.running = false;
+        task.startedAt = null;
+      }
+
+      task.completed = true;
+      task.completedAt = Date.now();
+    } else {
+      task.completed = false;
+      task.completedAt = null;
+    }
+
+    saveTasks();
+    render();
+  }
+
+  function deleteTask(id) {
+    if (!confirm("Are you sure you want to delete this task?")) return;
+
+    tasks = tasks.filter(item => item.id !== id);
+    saveTasks();
+    render();
+  }
+
+  function setFilter(filter) {
+    currentFilter = filter;
+
+    document.querySelectorAll(".filter-btn").forEach(button => {
+      button.classList.toggle(
+        "active",
+        button.dataset.filter === filter
+      );
+    });
+
+    render();
+  }
+
+  document.querySelectorAll(".filter-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      setFilter(button.dataset.filter);
+    });
+  });
+
+  function renderStats() {
+    const completed = tasks.filter(task => task.completed).length;
+
+    const totalSeconds = tasks.reduce(
+      (sum, task) => sum + getElapsed(task),
+      0
+    );
+
+    document.getElementById("totalTasks").textContent = tasks.length;
+    document.getElementById("completedTasks").textContent = completed;
+    document.getElementById("totalTime").textContent =
+      formatMinutes(totalSeconds);
+  }
+
+  function render() {
+    renderStats();
+
+    const list = document.getElementById("taskList");
+    list.replaceChildren();
+
+    let visibleTasks = tasks;
+
+    if (currentFilter === "active") {
+      visibleTasks = tasks.filter(task => !task.completed);
+    }
+
+    if (currentFilter === "completed") {
+      visibleTasks = tasks.filter(task => task.completed);
+    }
+
+    if (visibleTasks.length === 0) {
+      const empty = makeElement("div", "empty");
+      const heading = makeElement("strong", "", "Nothing here yet!");
+      const message = makeElement(
+        "span",
+        "",
+        "Add a task above to start planning your time."
+      );
+
+      empty.append(heading, message);
+      list.append(empty);
+      return;
+    }
+
+    visibleTasks.forEach(task => {
+      const card = makeElement(
+        "div",
+        task.completed ? "task completed" : "task"
+      );
+
+      const top = makeElement("div", "task-top");
+      const title = makeElement("div", "task-title", task.name);
+
+      const status = makeElement(
+        "span",
+        "small",
+        task.completed ? "Completed" : task.running ? "In progress" : "To do"
+      );
+
+      top.append(title, status);
+      card.append(top);
+
+      const details = makeElement("div", "task-details");
+
+      const estimate = makeElement(
+        "span",
+        "",
+        `Estimated: ${task.estimate} min`
+      );
+
+      details.append(estimate);
+
+      if (task.deadline) {
+        const date = new Date(task.deadline);
+        const deadlineText = makeElement(
+          "span",
+          "",
+          "Due: " + date.toLocaleString([], {
+            dateStyle: "medium",
+            timeStyle: "short"
+          })
+        );
+
+        details.append(deadlineText);
+      }
+
+      card.append(details);
+
+      const timer = makeElement(
+        "div",
+        "timer",
+        formatTime(getElapsed(task))
+      );
+
+      card.append(timer);
+
+      if (task.completed) {
+        const actual = getElapsed(task);
+        const comparison = makeElement(
+          "div",
+          "comparison",
+          `Estimated: ${task.estimate} min · Actual: ${formatMinutes(actual)}`
+        );
+
+        card.append(comparison);
+      }
+
+      const actions = makeElement("div", "task-actions");
+
+      if (!task.completed) {
+        if (task.running) {
+          actions.append(
+            addButton("Pause", "secondary", () => pauseTimer(task.id))
+          );
+        } else {
+          actions.append(
+            addButton("Start timer", "primary", () => startTimer(task.id))
+          );
+        }
+
+        actions.append(
+          addButton("Complete", "secondary", () => completeTask(task.id))
+        );
+      } else {
+        actions.append(
+          addButton("Undo completion", "secondary", () => completeTask(task.id))
+        );
+      }
+
+      actions.append(
+        addButton("Reset timer", "secondary", () => resetTimer(task.id))
+      );
+
+      actions.append(
+        addButton("Delete", "danger", () => deleteTask(task.id))
+      );
+
+      card.append(actions);
+      list.append(card);
+    });
+  }
+
+  // Refresh the displayed timer without needing to reload the page.
+  setInterval(render, 1000);
+
+  render();
+</script>
+
+</body>
+</html>
