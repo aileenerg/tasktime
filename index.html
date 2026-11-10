@@ -174,10 +174,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // Keep the URL below. Paste your Supabase publishable key between the quotes.
   const SUPABASE_URL = "https://ybqnjvcitiormblgxycj.supabase.co";
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Vd_1wjsl5JK3hhoUkQHb3Q_7fYTFvHs";
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  const tasktimeClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
   const STORAGE_KEY = "tasktime_tasks_v1";
   let user = null, tasks = [], currentFilter = "all", ownChannel = null, activePage = "tasksPage";
@@ -211,18 +210,18 @@
       elapsed_seconds:Math.floor(task.elapsed_seconds||0),timer_started_at:task.timer_started_at||null,completed:!!task.completed};
   }
   async function loadTasks(){
-    const {data,error}=await supabase.from("tasks").select("*").eq("owner_id",user.id).order("created_at",{ascending:false});
+    const {data,error}=await tasktimeClient.from("tasks").select("*").eq("owner_id",user.id).order("created_at",{ascending:false});
     if(error)throw error;
     tasks=(data||[]).map(normalize);render();
   }
   async function saveTask(task){
     const values=payload(task);
     if(task.id){
-      const {data,error}=await supabase.from("tasks").update(values).eq("id",task.id).eq("owner_id",user.id).select().single();
+      const {data,error}=await tasktimeClient.from("tasks").update(values).eq("id",task.id).eq("owner_id",user.id).select().single();
       if(error)throw error;
       Object.assign(task,normalize(data));
     }else{
-      const {data,error}=await supabase.from("tasks").insert(values).select().single();
+      const {data,error}=await tasktimeClient.from("tasks").insert(values).select().single();
       if(error)throw error;
       Object.assign(task,normalize(data));
     }
@@ -264,7 +263,7 @@
   }
   async function deleteTask(id){
     if(!confirm("Are you sure you want to delete this task?"))return;
-    const {error}=await supabase.from("tasks").delete().eq("id",id).eq("owner_id",user.id);
+    const {error}=await tasktimeClient.from("tasks").delete().eq("id",id).eq("owner_id",user.id);
     if(error){alert("Could not delete task: "+error.message);return;}
     tasks=tasks.filter(t=>t.id!==id);render();
   }
@@ -322,29 +321,29 @@
 
   async function ensureProfile(){
     const displayName=(user.user_metadata&&user.user_metadata.display_name)||user.email.split("@")[0];
-    const {error}=await supabase.from("profiles").upsert({user_id:user.id,display_name:displayName},{onConflict:"user_id"});
+    const {error}=await tasktimeClient.from("profiles").upsert({user_id:user.id,display_name:displayName},{onConflict:"user_id"});
     if(error)console.warn("Profile setup:",error.message);
   }
   async function ensureShareProfile(){
-    const {data,error}=await supabase.from("share_profiles").select("share_token,is_active").eq("owner_id",user.id).maybeSingle();
+    const {data,error}=await tasktimeClient.from("share_profiles").select("share_token,is_active").eq("owner_id",user.id).maybeSingle();
     if(error)throw error;
     if(!data){
-      const {error:insertError}=await supabase.from("share_profiles").insert({owner_id:user.id,is_active:true});
+      const {error:insertError}=await tasktimeClient.from("share_profiles").insert({owner_id:user.id,is_active:true});
       if(insertError)throw insertError;
     }
   }
   async function loadShareStatus(){
-    const {data,error}=await supabase.from("share_profiles").select("share_token,is_active").eq("owner_id",user.id).maybeSingle();
+    const {data,error}=await tasktimeClient.from("share_profiles").select("share_token,is_active").eq("owner_id",user.id).maybeSingle();
     if(error){$("shareStatus").textContent="Could not load sharing settings: "+error.message;return;}
     $("shareStatus").textContent=data?(data.is_active?"Sharing is ON. Your link is active.":"Sharing is OFF. Your old link no longer works."):"Create a link to start sharing.";
   }
   async function createShareLink(){
     try{
       await ensureShareProfile();
-      const {data,error}=await supabase.from("share_profiles").select("share_token,is_active").eq("owner_id",user.id).single();
+      const {data,error}=await tasktimeClient.from("share_profiles").select("share_token,is_active").eq("owner_id",user.id).single();
       if(error)throw error;
       if(!data.is_active){
-        const {error:updateError}=await supabase.from("share_profiles").update({is_active:true}).eq("owner_id",user.id);
+        const {error:updateError}=await tasktimeClient.from("share_profiles").update({is_active:true}).eq("owner_id",user.id);
         if(updateError)throw updateError;
       }
       const url=new URL(location.href);url.search="";url.hash="";url.searchParams.set("share",data.share_token);
@@ -353,7 +352,7 @@
     }catch(e){$("shareStatus").textContent="Could not create/copy your link: "+e.message;}
   }
   async function disableShare(){
-    const {error}=await supabase.from("share_profiles").update({is_active:false}).eq("owner_id",user.id);
+    const {error}=await tasktimeClient.from("share_profiles").update({is_active:false}).eq("owner_id",user.id);
     if(error){$("shareStatus").textContent="Could not turn sharing off: "+error.message;return;}
     $("shareStatus").textContent="Sharing is OFF. Your old link has been disabled.";
   }
@@ -363,7 +362,7 @@
   async function previewSharedTasks(token){
     $("sharedPreview").classList.remove("hidden");
     $("previewTasks").replaceChildren(el("p","small","Loading shared tasks…"));
-    const {data,error}=await supabase.rpc("get_shared_tasks",{p_token:token});
+    const {data,error}=await tasktimeClient.rpc("get_shared_tasks",{p_token:token});
     if(error){$("previewTasks").replaceChildren(el("p","small","This link is invalid, expired, or sharing has been turned off."));$("acceptPreviewBtn").disabled=true;return;}
     $("previewTasks").replaceChildren();
     if(!data||!data.length)$("previewTasks").append(el("div","empty","This person has no tasks to show yet."));
@@ -374,7 +373,7 @@
   }
   async function acceptToken(token){
     if(!user){notice("authNotice","Sign in or create an account first, then accept the shared list.");return;}
-    const {error}=await supabase.rpc("accept_share_link",{p_token:token});
+    const {error}=await tasktimeClient.rpc("accept_share_link",{p_token:token});
     if(error){alert("Could not add this friend: "+error.message);return;}
     $("sharedPreview").classList.add("hidden");
     history.replaceState({},document.title,location.pathname+location.hash);
@@ -395,11 +394,11 @@
 
   async function loadFriends(){
     const container=$("friendsList");container.replaceChildren(el("p","small","Loading friends…"));
-    const {data:links,error}=await supabase.from("friend_connections").select("friend_id").eq("user_id",user.id);
+    const {data:links,error}=await tasktimeClient.from("friend_connections").select("friend_id").eq("user_id",user.id);
     if(error){container.replaceChildren(el("p","small","Could not load friends: "+error.message));return;}
     const ids=[...new Set((links||[]).map(x=>x.friend_id))];
     if(!ids.length){container.replaceChildren(el("div","empty","No friends yet. Share your link or accept someone else's link to add a friend."));return;}
-    const {data:profiles, error:profileError}=await supabase.from("profiles").select("user_id,display_name").in("user_id",ids);
+    const {data:profiles, error:profileError}=await tasktimeClient.from("profiles").select("user_id,display_name").in("user_id",ids);
     if(profileError){container.replaceChildren(el("p","small","Could not load friend profiles: "+profileError.message));return;}
     const names={};(profiles||[]).forEach(p=>names[p.user_id]=p.display_name||"TaskTime friend");
     container.replaceChildren();
@@ -412,7 +411,7 @@
     }
   }
   async function loadFriendTasks(id,box){
-    const {data,error}=await supabase.from("tasks").select("id,name,estimate_minutes,completed,elapsed_seconds,timer_started_at,deadline").eq("owner_id",id).order("created_at",{ascending:false});
+    const {data,error}=await tasktimeClient.from("tasks").select("id,name,estimate_minutes,completed,elapsed_seconds,timer_started_at,deadline").eq("owner_id",id).order("created_at",{ascending:false});
     if(error){box.replaceChildren(el("p","small","Friend task list unavailable: "+error.message));return;}
     friendCache[id]=data||[];box.replaceChildren(progressBar(friendCache[id]));
     if(!data||!data.length){box.append(el("p","small","No tasks shared yet."));return;}
@@ -423,21 +422,21 @@
   }
   async function removeFriend(id){
     if(!confirm("Remove this friend? They will also disappear from your Friends list."))return;
-    const {error}=await supabase.rpc("remove_friend",{p_friend_id:id});
+    const {error}=await tasktimeClient.rpc("remove_friend",{p_friend_id:id});
     if(error){alert("Could not remove friend: "+error.message);return;}
     await loadFriends();
   }
   function subscribeFriend(id){
     if(friendChannels.some(c=>c.topic&&c.topic.includes(id)))return;
-    const channel=supabase.channel("friend-tasks-"+id)
+    const channel=tasktimeClient.channel("friend-tasks-"+id)
       .on("postgres_changes",{event:"*",schema:"public",table:"tasks",filter:"owner_id=eq."+id},async()=>{
         const box=$("friend-"+id);if(box)await loadFriendTasks(id,box);
       }).subscribe();
     friendChannels.push(channel);
   }
   function subscribeOwnTasks(){
-    if(ownChannel)supabase.removeChannel(ownChannel);
-    ownChannel=supabase.channel("my-task-changes")
+    if(ownChannel)tasktimeClient.removeChannel(ownChannel);
+    ownChannel=tasktimeClient.channel("my-task-changes")
       .on("postgres_changes",{event:"*",schema:"public",table:"tasks",filter:"owner_id=eq."+user.id},async()=>{await loadTasks();})
       .subscribe();
   }
@@ -447,7 +446,7 @@
     try{old=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");}catch(e){alert("The old browser tasks could not be read.");return;}
     if(!Array.isArray(old)||!old.length){$("migrationStatus").textContent="No old TaskTime tasks were found in this browser.";return;}
     if(!confirm(`Import ${old.length} old task(s) into this account? Existing cloud tasks will stay as they are.`))return;
-    const {data:existing,error}=await supabase.from("tasks").select("name,created_at").eq("owner_id",user.id);
+    const {data:existing,error}=await tasktimeClient.from("tasks").select("name,created_at").eq("owner_id",user.id);
     if(error){$("migrationStatus").textContent="Could not check existing tasks: "+error.message;return;}
     let imported=0,failed=0;
     for(const t of old){
@@ -455,7 +454,7 @@
       const startedAt=t.running&&t.startedAt?new Date(t.startedAt).toISOString():null;
       const row={owner_id:user.id,name:t.name.trim(),estimate_minutes:Number(t.estimate)||30,
         deadline:t.deadline||null,elapsed_seconds:Math.floor(Number(t.elapsed)||0),timer_started_at:startedAt,completed:!!t.completed};
-      const {error:insertError}=await supabase.from("tasks").insert(row);
+      const {error:insertError}=await tasktimeClient.from("tasks").insert(row);
       if(insertError)failed++;else imported++;
     }
     await loadTasks();
@@ -476,14 +475,14 @@
   }
   async function signIn(){
     const email=$("authEmail").value.trim(),password=$("authPassword").value;
-    const {data,error}=await supabase.auth.signInWithPassword({email,password});
+    const {data,error}=await tasktimeClient.auth.signInWithPassword({email,password});
     if(error){notice("authNotice",error.message,true);return;}
     await showApp(data.user);
   }
   async function signUp(){
     const email=$("authEmail").value.trim(),password=$("authPassword").value;
     if(password.length<6){notice("authNotice","Please use a password with at least 6 characters.",true);return;}
-    const {data,error}=await supabase.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
+    const {data,error}=await tasktimeClient.auth.signUp({email,password,options:{emailRedirectTo:location.origin+location.pathname}});
     if(error){notice("authNotice",error.message,true);return;}
     if(data.session)await showApp(data.user);
     else notice("authNotice","Account created. Check your email for the confirmation link, then return here and sign in.");
@@ -491,23 +490,22 @@
   $("signInBtn").addEventListener("click",signIn);
   $("signUpBtn").addEventListener("click",signUp);
   $("signOutBtn").addEventListener("click",async()=>{
-    await supabase.auth.signOut();user=null;tasks=[];
-    if(ownChannel){await supabase.removeChannel(ownChannel);ownChannel=null;}
-    for(const c of friendChannels)await supabase.removeChannel(c);friendChannels=[];
+    await tasktimeClient.auth.signOut();user=null;tasks=[];
+    if(ownChannel){await tasktimeClient.removeChannel(ownChannel);ownChannel=null;}
+    for(const c of friendChannels)await tasktimeClient.removeChannel(c);friendChannels=[];
     $("appArea").classList.add("hidden");$("authPanel").classList.remove("hidden");
   });
 
-  // The old localStorage data stays in this browser until you choose to import it.
   async function initialize(){
     if(SUPABASE_PUBLISHABLE_KEY==="PASTE_YOUR_SB_PUBLISHABLE_KEY_HERE"){
       notice("authNotice","First paste your Supabase publishable key into index.html, then reload this page.",true);
       $("signInBtn").disabled=true;$("signUpBtn").disabled=true;return;
     }
-    const {data:{session},error}=await supabase.auth.getSession();
+    const {data:{session},error}=await tasktimeClient.auth.getSession();
     if(error){notice("authNotice",error.message,true);return;}
     if(session)await showApp(session.user);
     else if(shareTokenFromUrl)await previewSharedTasks(shareTokenFromUrl);
-    supabase.auth.onAuthStateChange((_event,session)=>{
+    tasktimeClient.auth.onAuthStateChange((_event,session)=>{
       if(session&&!user)showApp(session.user);
     });
   }
